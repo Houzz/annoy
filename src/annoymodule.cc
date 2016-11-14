@@ -148,6 +148,10 @@ public:
     if (!this->save(filename))
       throw ErrnoException();
   }
+  void slow_save_py(const string& filename) {
+    if (!this->slow_save(filename))
+      throw ErrnoException();
+  }
   void load_py(const string& filename) {
     if (!this->load(filename))
       throw ErrnoException();
@@ -167,6 +171,7 @@ void expose_methods(python::class_<C> c) {
     .def("update_label",      &C::update_label_py)
     .def("build",             &C::build)
     .def("save",              &C::save_py)
+    .def("slow_save",         &C::slow_save_py)
     .def("load",              &C::load_py)
     .def("load_memory",       &C::load_memory_py)
     .def("unload",            &C::unload)

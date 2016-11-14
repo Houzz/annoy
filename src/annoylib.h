@@ -401,7 +401,6 @@ public:
     if (_verbose) showUpdate("has %d nodes\n", _n_nodes);
   }
 
-
   bool save(const string& filename) {
     FILE *f = fopen(filename.c_str(), "w");
     if (f == NULL)
@@ -414,6 +413,32 @@ public:
 
     fclose(f);
      
+    free(_nodes);
+    _n_items = 0;
+    _n_nodes = 0;
+    _nodes_size = 0;
+    _nodes = NULL;
+    _roots.clear();
+    return load(filename);
+  }
+
+  bool slow_save(const string& filename) {
+    FILE *f = fopen(filename.c_str(), "w");
+    if (f == NULL)
+      return false;
+    if (! _appended) {
+      _append_roots_at_tail();
+    }
+
+    // Write output file slowly so that the system does not freeze because of high disk io.
+    for (int i = 0; i < _n_nodes; i++) {
+      fwrite(_nodes + _s * i, _s, 1, f);
+      if (i % 10000 == 0) {
+        sleep(1);
+      }
+    }
+    fclose(f);
+
     free(_nodes);
     _n_items = 0;
     _n_nodes = 0;
@@ -789,7 +814,9 @@ protected:
     }
 
     vector<pair<T, S> > nns_dist;
-    while (nns_dist.size() < tn && !q.empty()) {
+    // while (nns_dist.size() < tn && !q.empty()) {
+    int counter = 0;
+    while (counter < tn && !q.empty()) {
       const pair<T, S>& top = q.top();
       S i = top.second;
       const typename Distance::node* nd = _get(top.second);
@@ -807,6 +834,7 @@ protected:
         for (size_t kk = 0; kk < nd->n_descendants; kk ++ ) {
           int w = nd->children[kk];
           if (r.find(w) == r.end()) {
+	    counter++;
             if (cset.size() == 0 || cset.find(_get(w)->label) != cset.end()) {
               nns_dist.push_back(make_pair(Distance::distance(v, _get(w)->v, _f), w));
               r.insert(make_pair(w, true));
